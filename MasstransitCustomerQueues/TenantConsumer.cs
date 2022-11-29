@@ -4,16 +4,19 @@ namespace MasstransitCustomerQueues;
 
 public class TenantConsumer : IConsumer<TenantMessage>
 {
-    private readonly IRequestClient<TenantMessage> _client;
-
-    public TenantConsumer(IRequestClient<TenantMessage> client)
-    {
-        _client = client;
-    }
+    private static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(2);
 
     public async Task Consume(ConsumeContext<TenantMessage> context)
     {
-        context.Message.Aggregated = true;
-        await _client.GetResponse<CommandResult>(context.Message);
+        await Semaphore.WaitAsync();
+        try
+        {
+            Console.WriteLine($"Message received for tenant {context.Message.TenantId}");
+            await Task.Delay(5000);
+        }
+        finally
+        {
+            Semaphore.Release();
+        }
     }
 }

@@ -20,6 +20,7 @@ public class MessagePublisher : IHostedService
         _bus.ConnectReceiveEndpoint("tenant1", e =>
         {
             var mqCfg = (RabbitMqReceiveEndpointConfiguration)e;
+            mqCfg.PrefetchCount = 1;
             mqCfg.Bind<TenantMessage>(cb => { cb.RoutingKey = "tenant1"; });
             mqCfg.Consumer<TenantConsumer>(_serviceProvider, cfg => cfg.ConcurrentMessageLimit = 1);
         });
@@ -27,6 +28,7 @@ public class MessagePublisher : IHostedService
         _bus.ConnectReceiveEndpoint("tenant2", e =>
         {
             var mqCfg = e as RabbitMqReceiveEndpointConfiguration;
+            mqCfg.PrefetchCount = 1;
             mqCfg.Bind<TenantMessage>(cb => { cb.RoutingKey = "tenant2"; });
             mqCfg.Consumer<TenantConsumer>(_serviceProvider, cfg => cfg.ConcurrentMessageLimit = 1);
         });
@@ -35,6 +37,7 @@ public class MessagePublisher : IHostedService
         _bus.ConnectReceiveEndpoint("tenant3", e =>
         {
             var mqCfg = e as RabbitMqReceiveEndpointConfiguration;
+            mqCfg.PrefetchCount = 1;
             mqCfg.Bind<TenantMessage>(cb => { cb.RoutingKey = "tenant3"; });
             mqCfg.Consumer<TenantConsumer>(_serviceProvider, cfg => cfg.ConcurrentMessageLimit = 1);
         });

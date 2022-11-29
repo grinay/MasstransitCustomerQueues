@@ -16,11 +16,7 @@ var host = Host.CreateDefaultBuilder(args)
 
         serviceCollection.AddMassTransit(busRegistrationConfigurator =>
         {
-            busRegistrationConfigurator.AddConsumer<TenantConsumer>(cfg =>
-            {
-                cfg.UseConcurrencyLimit(1);
-                cfg.ConcurrentMessageLimit = 1;
-            });
+            busRegistrationConfigurator.AddConsumer<TenantConsumer>();
 
             busRegistrationConfigurator.UsingRabbitMq((context, cfg) =>
             {
@@ -29,21 +25,10 @@ var host = Host.CreateDefaultBuilder(args)
                     h.Username("guest");
                     h.Password("guest");
                 });
-                
-                cfg.Send<TenantMessage>(x =>
-                {
-                    x.UseRoutingKeyFormatter<TenantMessage>(z =>
-                        z.Message.Aggregated ? "tenant-requests" : z.Message.TenantId);
-                });
 
+                cfg.Send<TenantMessage>(x => { x.UseRoutingKeyFormatter<TenantMessage>(z => z.Message.TenantId); });
                 cfg.Publish<TenantMessage>(x => { x.ExchangeType = "direct"; });
-                cfg.ReceiveEndpoint("tenant-requests", xc =>
-                {
-                    xc.Bind<TenantMessage>(cb => cb.RoutingKey = "tenant-requests");
-                    xc.Consumer<CommandExecutor>(ep => ep.ConcurrentMessageLimit = 1);
-                });
             });
-            busRegistrationConfigurator.AddRequestClient<TenantMessage>(RequestTimeout.After(m: 5));
         });
 
         serviceCollection.AddHostedService<MessagePublisher>();
