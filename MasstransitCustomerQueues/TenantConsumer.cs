@@ -4,20 +4,16 @@ namespace MasstransitCustomerQueues;
 
 public class TenantConsumer : IConsumer<TenantMessage>
 {
-    private Guid InstanceId = Guid.NewGuid();
-    private readonly IRequestClient<ExecuteCommand> _client;
+    private readonly IRequestClient<TenantMessage> _client;
 
-    public TenantConsumer(IRequestClient<ExecuteCommand> client)
+    public TenantConsumer(IRequestClient<TenantMessage> client)
     {
         _client = client;
     }
 
     public async Task Consume(ConsumeContext<TenantMessage> context)
     {
-        await _client.GetResponse<CommandResult>(new ExecuteCommand()
-        {
-            TenantId = context.Message.TenantId,
-            CorrelationId = context.Message.CorrelationId
-        });
+        context.Message.Aggregated = true;
+        await _client.GetResponse<CommandResult>(context.Message);
     }
 }

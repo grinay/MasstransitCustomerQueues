@@ -29,15 +29,21 @@ var host = Host.CreateDefaultBuilder(args)
                     h.Username("guest");
                     h.Password("guest");
                 });
-
-                cfg.ReceiveEndpoint(
-                    x => { x.Consumer<CommandExecutor>(cmCfg => { cmCfg.ConcurrentMessageLimit = 1; }); });
-
-                cfg.Send<TenantMessage>(x => { x.UseRoutingKeyFormatter(z => z.Message.TenantId); });
+                
+                cfg.Send<TenantMessage>(x =>
+                {
+                    x.UseRoutingKeyFormatter<TenantMessage>(z =>
+                        z.Message.Aggregated ? "tenant-requests" : z.Message.TenantId);
+                });
 
                 cfg.Publish<TenantMessage>(x => { x.ExchangeType = "direct"; });
+                cfg.ReceiveEndpoint("tenant-requests", xc =>
+                {
+                    xc.Bind<TenantMessage>(cb => cb.RoutingKey = "tenant-requests");
+                    xc.Consumer<CommandExecutor>(ep => ep.ConcurrentMessageLimit = 1);
+                });
             });
-            busRegistrationConfigurator.AddRequestClient<ExecuteCommand>(RequestTimeout.After(m: 5));
+            busRegistrationConfigurator.AddRequestClient<TenantMessage>(RequestTimeout.After(m: 5));
         });
 
         serviceCollection.AddHostedService<MessagePublisher>();

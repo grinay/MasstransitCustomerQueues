@@ -2,13 +2,13 @@ using MassTransit;
 
 namespace MasstransitCustomerQueues;
 
-public class CommandExecutor : IConsumer<ExecuteCommand>
+public class CommandExecutor : IConsumer<TenantMessage>
 {
-    public async Task Consume(ConsumeContext<ExecuteCommand> context)
+    public async Task Consume(ConsumeContext<TenantMessage> context)
     {
         Console.WriteLine($"Message received for tenant {context.Message.TenantId}");
         await Task.Delay(5000);
-        
+
         await context.RespondAsync(new CommandResult
         {
             TenantId = context.Message.TenantId,
